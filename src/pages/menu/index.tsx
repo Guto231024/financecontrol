@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 export default function Menu() {
   return (
 
-      <Text>NIGGER</Text>
+      <Text></Text>
     
   );
 }
