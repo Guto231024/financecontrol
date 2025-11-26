@@ -3,6 +3,7 @@ import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import {Text, View, TouchableOpacity, Image, Alert} from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { supabase } from '../../lib/supabase';
 
 export default function Login() {
 
@@ -10,30 +11,33 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
 
-    const handleLogin = () => {
-     
+    const handleLogin = async () => {
       if (!email.trim()) {
         Alert.alert('Erro', 'Por favor, digite seu email');
         return;
       }
-      
       if (!email.endsWith('@gmail.com')) {
         Alert.alert('Erro', 'O email deve ser @gmail.com');
         return;
       }
-
-      // Validar senha
       if (!senha.trim()) {
         Alert.alert('Erro', 'Por favor, digite sua senha');
         return;
       }
-
       if (senha.length < 8) {
         Alert.alert('Erro', 'A senha deve ter pelo menos 8 caracteres');
         return;
       }
 
-      // Se todas as validações passarem, navegar
+      // Login real com Supabase
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
+      if (error) {
+        Alert.alert('Erro ao logar', error.message);
+        return;
+      }
       navigation.navigate("BottomRoutes");
     };
 
@@ -71,10 +75,8 @@ export default function Login() {
       </View>
       
       <View className="flex-row gap-2 mt-4">
-
         <Text className="text-gray-400">Não tem uma conta?</Text>
-
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text className="text-green-500 font-bold">Registre-se aqui</Text>
         </TouchableOpacity>
         

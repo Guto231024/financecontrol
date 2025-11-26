@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, Alert, Modal, TextInput, Dimensions } from 'react-native';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { TextInputMask } from 'react-native-masked-text';
-import { Feather } from '@expo/vector-icons'; // Certifique-se de ter instalado esta biblioteca: npx expo install @expo/vector-icons
+import { Feather } from '@expo/vector-icons';
+import { salvarSalario, buscarSalario, salvarGasto, buscarGastos } from '../../lib/db';
 
 // Definindo o tipo de gasto
 interface Gasto {
@@ -27,6 +28,25 @@ export default function Menu() {
   const [nomeGasto, setNomeGasto] = useState('');
   const [valorGasto, setValorGasto] = useState('');
 
+  useEffect(() => {
+    async function carregarSalario() {
+      try {
+        const salarioDb = await buscarSalario();
+        if (salarioDb && salarioDb.valor) {
+          setSalario(Number(salarioDb.valor));
+        }
+      } catch (e) {}
+    }
+    async function carregarGastos() {
+      try {
+        const gastosDb = await buscarGastos();
+        setGastos(gastosDb);
+      } catch (e) {}
+    }
+    carregarSalario();
+    carregarGastos();
+  }, []);
+
   // Calcular totais
   const totalGasto = gastos.reduce((acc, gasto) => acc + gasto.valor, 0);
   const saldoDisponivel = salario - totalGasto;
@@ -36,7 +56,7 @@ export default function Menu() {
     return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const adicionarSalario = () => {
+  const adicionarSalario = async () => {
     // Remove 'R$ ', pontos (milhar) e troca vírgula por ponto (decimal)
     const valor = parseFloat(
       novoSalario.replace('R$ ', '').replace(/\./g, '').replace(',', '.')
@@ -47,40 +67,41 @@ export default function Menu() {
       return;
     }
 
-    setSalario(valor);
-    setNovoSalario('');
-    setModalSalarioVisible(false);
-    Alert.alert('Sucesso', 'Salário adicionado com sucesso! 💰');
+    try {
+      await salvarSalario(valor);
+      setSalario(valor);
+      setNovoSalario('');
+      setModalSalarioVisible(false);
+      Alert.alert('Sucesso', 'Salário salvo no Supabase! 💰');
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível salvar no banco de dados.');
+    }
   };
 
-  const adicionarGasto = () => {
-    // Remove 'R$ ', pontos (milhar) e troca vírgula por ponto (decimal)
+  const adicionarGasto = async () => {
     const valor = parseFloat(
       valorGasto.replace('R$ ', '').replace(/\./g, '').replace(',', '.')
     );
-    
     if (!nomeGasto.trim()) {
       Alert.alert('Erro', 'Digite o nome do gasto.');
       return;
     }
-    
     if (!valorGasto.trim() || isNaN(valor) || valor <= 0) {
       Alert.alert('Erro', 'Digite um valor válido para o gasto.');
       return;
     }
-
-    const novoGasto: Gasto = {
-      id: Date.now().toString(),
-      nome: nomeGasto,
-      valor: valor,
-      data: new Date().toLocaleDateString('pt-BR'),
-    };
-
-    setGastos([...gastos, novoGasto]);
-    setNomeGasto('');
-    setValorGasto('');
-    setModalGastoVisible(false);
-    Alert.alert('Sucesso', 'Gasto adicionado com sucesso! 💸');
+    try {
+      await salvarGasto(nomeGasto, valor);
+      setNomeGasto('');
+      setValorGasto('');
+      setModalGastoVisible(false);
+      Alert.alert('Sucesso', 'Gasto salvo no Supabase! 💸');
+      // Recarregar lista de gastos do banco
+      const gastosDb = await buscarGastos();
+      setGastos(gastosDb);
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível salvar o gasto no banco de dados.');
+    }
   };
 
   const excluirGasto = (id: string) => {
