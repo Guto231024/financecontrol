@@ -1,6 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import Login from '../pages/login';
+import Register from '../pages/register';
 import BottomRoutes from './bottom.routes';
 
 
@@ -20,11 +21,15 @@ export default function Routes() {
             <Stack.Screen
                 name="Login"
                 component={Login}
-             />
-             <Stack.Screen
+            />
+            <Stack.Screen
+                name="Register"
+                component={Register}
+            />
+            <Stack.Screen
                 name="BottomRoutes"
                 component={BottomRoutes}
-             />
+            />
         </Stack.Navigator>
     )
 }
